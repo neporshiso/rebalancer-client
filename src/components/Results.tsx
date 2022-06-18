@@ -9,19 +9,136 @@ import {
   Box,
   Container,
   Heading,
+  Button,
+  ButtonGroup,
 } from "@chakra-ui/react";
+import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 
-const Results = (props) => {
-  const { data } = props;
+type Direction = "UP" | "DOWN";
 
-  console.log("DATA", data);
+type Security = {
+  action: "BUY" | "SELL" | "HOLD";
+  balance: number;
+  currentUnits: number;
+  currentWeight: number;
+  deltaUnits: number;
+  desiredWeight: number;
+  price: number;
+  ticker: string;
+};
+
+type RebalancedPortfolio = {
+  portfolio: Security[];
+  unallocatedValue: number;
+  totalValue: number;
+};
+
+const Results = ({ data, setRebalanceResults }) => {
+  const [rebalancedPortfolio, setRebalancedPortfolio] =
+    React.useState<RebalancedPortfolio>(data);
+
+  const handleAdjustment = (
+    e: React.SyntheticEvent,
+    direction: Direction,
+    ticker: string
+  ) => {
+    setRebalancedPortfolio((prevState) => {
+      let unallocatedValue = prevState.unallocatedValue;
+      const portfolio = prevState.portfolio.map((security) => {
+        if (security.ticker === ticker) {
+          if (direction === "UP" && security.action === "BUY") {
+            const newCurrentUnits = security.currentUnits + 1;
+            const newDeltaUnits = security.deltaUnits + 1;
+            const newBalance = newCurrentUnits * security.price;
+            unallocatedValue = unallocatedValue - security.price;
+            const newCurrentWeight = newBalance / prevState.totalValue;
+            return {
+              ...security,
+              currentUnits: newCurrentUnits,
+              deltaUnits: newDeltaUnits,
+              balance: newBalance,
+              currentWeight: newCurrentWeight,
+            };
+          }
+
+          if (direction === "DOWN" && security.action === "BUY") {
+            const newCurrentUnits = security.currentUnits - 1;
+            const newDeltaUnits = security.deltaUnits - 1;
+            const newBalance = newCurrentUnits * security.price;
+            unallocatedValue = unallocatedValue + security.price;
+            const newCurrentWeight = newBalance / prevState.totalValue;
+
+            return {
+              ...security,
+              currentUnits: newCurrentUnits,
+              deltaUnits: newDeltaUnits,
+              balance: newBalance,
+              currentWeight: newCurrentWeight,
+            };
+          }
+
+          if (direction === "UP" && security.action === "SELL") {
+            const newDeltaUnits = security.deltaUnits - 1;
+            const newCurrentUnits = security.currentUnits - 1;
+            const newBalance = newCurrentUnits * security.price;
+            unallocatedValue = unallocatedValue + security.price;
+            const newCurrentWeight = newBalance / prevState.totalValue;
+
+            return {
+              ...security,
+              currentUnits: newCurrentUnits,
+              deltaUnits: newDeltaUnits,
+              balance: newBalance,
+              currentWeight: newCurrentWeight,
+            };
+          }
+
+          if (direction === "DOWN" && security.action === "SELL") {
+            const newDeltaUnits = security.deltaUnits + 1;
+            const newCurrentUnits = security.currentUnits + 1;
+            const newBalance = newCurrentUnits * security.price;
+            unallocatedValue = unallocatedValue - security.price;
+            const newCurrentWeight = newBalance / prevState.totalValue;
+
+            return {
+              ...security,
+              currentUnits: newCurrentUnits,
+              deltaUnits: newDeltaUnits,
+              balance: newBalance,
+              currentWeight: newCurrentWeight,
+            };
+          }
+        }
+
+        return security;
+      });
+
+      return { portfolio, unallocatedValue, totalValue: prevState.totalValue };
+    });
+  };
 
   return (
     <Container maxWidth="container.xl" padding={10}>
       <Box>
-        <Heading size="md">
-          Unallocated Portfolio Value: {`$${data?.unallocatedValue}`}
+        <Heading
+          size="md"
+          style={{
+            color: rebalancedPortfolio.unallocatedValue < 0 ? "red" : "black",
+          }}
+        >
+          Unallocated Portfolio Value:{" "}
+          {`$${rebalancedPortfolio.unallocatedValue}`}
         </Heading>
+        <ButtonGroup>
+          <Button onClick={() => setRebalanceResults()}>Go Back</Button>
+          <Button
+            onClick={() => {
+              setRebalancedPortfolio(data);
+            }}
+          >
+            Reset
+          </Button>
+        </ButtonGroup>
       </Box>
       <Table variant="simple">
         <Thead>
@@ -34,7 +151,7 @@ const Results = (props) => {
           </Tr>
         </Thead>
         <Tbody>
-          {data.portfolio.map((el) => {
+          {rebalancedPortfolio.portfolio.map((el) => {
             const {
               ticker,
               price,
@@ -43,15 +160,35 @@ const Results = (props) => {
               currentWeight,
               desiredWeight,
             } = el;
-
             return (
-              <Tr>
+              <Tr key={ticker}>
                 <Td>{ticker}</Td>
                 <Td>{`$${price}`}</Td>
                 <Td>
-                  {action === "HOLD"
-                    ? "You don't have to do anything with this ticker."
-                    : `${action} ${Math.abs(deltaUnits)} shares`}
+                  {action === "HOLD" ? (
+                    "Do nothing."
+                  ) : (
+                    <>
+                      <div>
+                        {action} {Math.abs(deltaUnits)} shares
+                      </div>
+                      <ButtonGroup variant={"outline"} size="sm">
+                        <Button
+                          onClick={(e) => handleAdjustment(e, "UP", ticker)}
+                          leftIcon={<AddIcon />}
+                        >
+                          Increase Number of Shares to {action.toLowerCase()}
+                        </Button>
+
+                        <Button
+                          onClick={(e) => handleAdjustment(e, "DOWN", ticker)}
+                          leftIcon={<MinusIcon />}
+                        >
+                          Decrease Number of Shares to {action.toLowerCase()}
+                        </Button>
+                      </ButtonGroup>
+                    </>
+                  )}
                 </Td>
                 <Td isNumeric>{`${(currentWeight * 100).toFixed(2)}%`}</Td>
                 <Td isNumeric>{`${desiredWeight * 100}%`}</Td>

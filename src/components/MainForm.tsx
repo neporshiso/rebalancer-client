@@ -2,7 +2,6 @@ import * as React from "react";
 import axios from "axios";
 import {
   Container,
-  Flex,
   VStack,
   Heading,
   SimpleGrid,
@@ -52,8 +51,6 @@ const MainForm = () => {
       securities: securitiesInput,
     };
 
-    console.log("formdata", formData);
-
     Object.keys(formData).forEach((ticker) => {
       const securityObj = formData[ticker];
       securitiesInput.push(securityObj);
@@ -74,8 +71,8 @@ const MainForm = () => {
 
   return (
     <>
-      <Container maxWidth="container.xl" padding={10}>
-        <Flex h="100vh" py={20}>
+      {!rebalanceResults && (
+        <Container maxWidth="container.xl" padding={10}>
           <VStack
             w="full"
             h="full"
@@ -102,9 +99,10 @@ const MainForm = () => {
             </GridItem>
 
             <SimpleGrid w="full" columns={6} columnGap={3} rowGap={6}>
-              {[...Array(initialNumberTickerRows).keys()].map(() => {
+              {[...Array(initialNumberTickerRows).keys()].map((el) => {
                 return (
                   <TickerFormRow
+                    key={el}
                     portfolioValue={portfolioValue}
                     setFormData={setFormData}
                   />
@@ -129,10 +127,9 @@ const MainForm = () => {
               <Button onClick={handleSubmit}>Rebalance</Button>
             </VStack>
           </VStack>
-        </Flex>
-      </Container>
-
-      {rebalanceResults && <Results data={rebalanceResults} />}
+        </Container>
+      )}
+      {rebalanceResults && <Results data={rebalanceResults} setRebalanceResults={setRebalanceResults}/>}
     </>
   );
 };
