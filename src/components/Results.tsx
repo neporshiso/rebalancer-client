@@ -33,6 +33,7 @@ type RebalancedPortfolio = {
   totalValue: number;
 };
 
+// @ts-ignore
 const Results = ({ data, setRebalanceResults }) => {
   const [rebalancedPortfolio, setRebalancedPortfolio] =
     React.useState<RebalancedPortfolio>(data);

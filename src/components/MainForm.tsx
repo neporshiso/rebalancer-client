@@ -52,6 +52,7 @@ const MainForm = () => {
     };
 
     Object.keys(formData).forEach((ticker) => {
+      // @ts-ignore 
       const securityObj = formData[ticker];
       securitiesInput.push(securityObj);
     });
