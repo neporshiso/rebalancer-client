@@ -52,13 +52,15 @@ const MainForm = () => {
     };
 
     Object.keys(formData).forEach((ticker) => {
-      // @ts-ignore 
+      // @ts-ignore
       const securityObj = formData[ticker];
       securitiesInput.push(securityObj);
     });
 
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const { data } = await axios.post(
-      "http://localhost:8080/portfolio",
+      `${apiUrl}/portfolio`,
       JSON.stringify(payload),
       {
         headers: {
@@ -130,7 +132,12 @@ const MainForm = () => {
           </VStack>
         </Container>
       )}
-      {rebalanceResults && <Results data={rebalanceResults} setRebalanceResults={setRebalanceResults}/>}
+      {rebalanceResults && (
+        <Results
+          data={rebalanceResults}
+          setRebalanceResults={setRebalanceResults}
+        />
+      )}
     </>
   );
 };
